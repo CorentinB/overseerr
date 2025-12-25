@@ -31,11 +31,14 @@ jobs:
 
   build_and_push:
     name: Build & Publish Docker Images
-    if: github.ref == 'refs/heads/develop' && !contains(github.event.head_commit.message, '[skip ci]')
+    if: (github.ref == 'refs/heads/develop' && !contains(github.event.head_commit.message, '[skip ci]')) || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Set lowercase owner name
+        id: repo
+        run: echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
@@ -56,8 +59,8 @@ jobs:
           build-args: |
             COMMIT_TAG=${{ github.sha }}
           tags: |
-            ghcr.io/${{ github.repository_owner }}/overseerr:develop
-            ghcr.io/${{ github.repository_owner }}/overseerr:${{ github.sha }}
+            ghcr.io/${{ steps.repo.outputs.owner }}/overseerr:develop
+            ghcr.io/${{ steps.repo.outputs.owner }}/overseerr:${{ github.sha }}
 
   discord:
     name: Send Discord Notification
